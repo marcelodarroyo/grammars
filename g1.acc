@@ -1,0 +1,9 @@
+%nodefault
+
+S : A;
+
+A : B | 'a';
+
+B : C | 'b';
+
+C : A | 'c';
