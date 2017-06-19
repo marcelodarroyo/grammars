@@ -22,10 +22,13 @@ def genNonRecGrammar(g,n):
     symbolIndex = {}
     rules = []
     i = 0;
-    for unrools in range(0,n):
+    for unrolls in range(0,n):
         for r in g.rules:
-            if i == 0 and r == g.rules[0]:
-                newrule = CFG.Rule(r.name,[])
+            if r == g.rules[0]:
+                if unrolls == 0:
+                    newrule = CFG.Rule(r.name,[])
+                else:
+                    continue # skip start rule
             else:
                 newrule = CFG.Rule(r.name + str(i),[])
             for seq in r.seqs:
@@ -41,7 +44,7 @@ def genNonRecGrammar(g,n):
             rules.append(newrule)
             i = i + 1
 
-    # step 2: generate n-indexed rules with only terminal sequences as rhs
+    # step 2: generate indexed rules with only terminal sequences as rhs
     for r in g.rules:
         if r == g.rules[0]:
             continue;
