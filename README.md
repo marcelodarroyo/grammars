@@ -6,3 +6,10 @@ Project: Grammars and parsing
 
 Testing generation techniques for ambiguous context free grammars detection
 
+## Usage:
+
+```
+./recelim.py <grammar> <lexer> <unrolls>
+```
+
+Example: `./recelim.py g1.acc lex 3
