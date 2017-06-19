@@ -5,8 +5,8 @@ import sys, Lexer, CFG
 print sys.argv[1], sys.argv[2]
 
 def onlyTokens(seq):
-    """ 
-    Check if sequence has only terminals or token references  
+    """
+    Check if sequence has only terminals or token references
     """
     for sym in seq:
         if isinstance(sym,CFG.Non_Term_Ref):
@@ -18,7 +18,7 @@ def genNonRecGrammar(g,n):
     Return an non recursive grammar with n unrolls
     """
 
-    # step 1: generate rules from 0..n-1 unrools 
+    # step 1: generate rules from 0..n-1 unrools
     symbolIndex = {}
     rules = []
     i = 0;
@@ -40,7 +40,7 @@ def genNonRecGrammar(g,n):
                 newrule.seqs.append(newseq)
             rules.append(newrule)
             i = i + 1
-    
+
     # step 2: generate n-indexed rules with only terminal sequences as rhs
     for r in g.rules:
         if r == g.rules[0]:
@@ -56,7 +56,7 @@ def genNonRecGrammar(g,n):
             rules.append(newrule)
 
     return CFG.CFG(g.tokens,rules)
-#============================ end function genNonRecGrammar ===================
+#============= end function genNonRecGrammar ===============
 
 
 if __name__ == "__main__":
@@ -69,4 +69,3 @@ if __name__ == "__main__":
         lex = Lexer.parse( l.read() )
         grammar = CFG.parse(lex, g.read())
         print genNonRecGrammar(grammar,n).__repr__()
-
