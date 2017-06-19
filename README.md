@@ -12,4 +12,4 @@ Testing generation techniques for ambiguous context free grammars detection
 ./recelim.py <grammar> <lexer> <unrolls>
 ```
 
-Example: `./recelim.py g1.acc lex 3
+Example: `./recelim.py g1.acc lex 3` 
