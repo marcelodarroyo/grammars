@@ -13,8 +13,10 @@ def onlyTokens(seq):
             return False
     return True
 
-def recursiveRules(g):
-    """ Get recursive rules """
+def reachableSymbols(g):
+    """ Return dictionary of reachable symbols:
+        { 's1': [reachable-list], 's2': [reachable-list], ...}
+    """
     reachable_syms = {}
     for r in g.rules:
         reachable_syms[r.name] = []
@@ -22,6 +24,7 @@ def recursiveRules(g):
             for sym in s:
                 if isinstance(sym,CFG.Non_Term_Ref) and not (sym in reachable_syms[r.name]):
                     reachable_syms[r.name].append(sym.name)
+    # transitive clausure
     changes = True
     while changes:
         changes = False
@@ -31,50 +34,60 @@ def recursiveRules(g):
                     if not (rs in reachable_syms[sym]):
                         reachable_syms[sym].append(rs)
                         changes = True
-    print "Reachable symbols:"
-    print reachable_syms
-    result = []
-    for sym in reachable_syms.keys():
-        if sym in reachable_syms[sym]:
-            result.append(sym)
-    print "Recursive rules:"
-    print result
-    return result
+    return reachable_syms
+
+def unrools(symbolIndex,n):
+    for sym in symbolIndex.keys():
+        if symbolIndex[sym] < n:
+            return False
+    return True
 
 def genNonRecGrammar(g,n):
     """
     Return an non recursive grammar with n unrolls
     """
-
     # step 1: generate rules from 0..n-1 unrools
-    symbolIndex = {}
-    rr = recursiveRules(g)
+    rs = reachableSymbols(g)
+    print "Reachablity relation:"
+    print rs
+    symbolIndex = {} # dictionary non-term -> last-index
+    # put recursive symbols in symbolIndex dictionary
+    for sym in rs.keys():
+        if sym in rs[sym]:
+            symbolIndex[sym] = 0
+    # invariant: symbolIndex[sym] == next index to generate
+    print "\nRecursive rules:"
+    print symbolIndex
+    print "\nGenerating non recursive grammar:"
     rules = []
     generated = []
-    i = 0;
-    for unrolls in range(0,n):
+    while not unrools(symbolIndex,n):
         for r in g.rules:
-            if r.name in rr:
+            if r.name in rs[r.name]:
+                # the rule is recursive
+                i = symbolIndex[r.name]
                 newrule = CFG.Rule(r.name + str(i),[])
+                symbolIndex[r.name] = i + 1
                 for seq in r.seqs:
                     newseq = [];
                     for sym in seq:
-                        if isinstance(sym,CFG.Non_Term_Ref):
-                            name = sym.name + str(i+1)
-                            newseq.append(CFG.Non_Term_Ref(name))
-                            symbolIndex[sym.name] = i+1
+                        if isinstance(sym,CFG.Non_Term_Ref) and sym.name in symbolIndex.keys():
+                            # sym is recursive: generate indexed symbol
+                            j = symbolIndex[sym.name]
+                            newseq.append(CFG.Non_Term_Ref(sym.name + str(j)))
                         else:
+                            # sym is not recursive: generate original symbol
                             newseq.append(sym)
                     newrule.seqs.append(newseq)
-                i = i + 1
             else:
+                # non recursive rule
                 if r.name in generated:
                     continue
                 newrule = CFG.Rule(r.name,[])
                 for seq in r.seqs:
                     newseq = [];
                     for sym in seq:
-                        if isinstance(sym,CFG.Non_Term_Ref) and sym.name in rr:
+                        if isinstance(sym,CFG.Non_Term_Ref) and sym.name in rs.keys():
                             name = sym.name + "0"
                             newseq.append(CFG.Non_Term_Ref(name))
                         else:
@@ -85,9 +98,9 @@ def genNonRecGrammar(g,n):
             rules.append(newrule)
 
     # step 2: generate indexed rules with only terminal sequences as rhs
-    for lhs in rr:
-        newrule = CFG.Rule(lhs + str(symbolIndex[lhs]),[])
-        for seq in g.get_rule(lhs).seqs:
+    for name in symbolIndex.keys():
+        newrule = CFG.Rule(name + str(symbolIndex[name]),[])
+        for seq in g.get_rule(name).seqs:
             newseq = [];
             if onlyTokens(seq):
                 for sym in seq:
@@ -109,5 +122,4 @@ if __name__ == "__main__":
         n = int(sys.argv[3])
         lex = Lexer.parse( l.read() )
         grammar = CFG.parse(lex, g.read())
-        print recursiveRules(grammar)
         print genNonRecGrammar(grammar,n).__repr__()
