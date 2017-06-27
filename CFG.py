@@ -177,10 +177,10 @@ class _Parser:
                 if self._cfg[i] == ";":
                     i += 1
                     return i, Rule(name, seqs)
-            else: 
+            else:
                 i += 1
                 break
-                            	
+
         while i < len(self._cfg):
             i = self._ws(i)
             j, seq = self._seq(i)
@@ -202,11 +202,11 @@ class _Parser:
                     if self._cfg[i] == ";":
                         i += 1
                         return i, Rule(name, seqs)
-                else: 
+                else:
                     i += 1
                     break
-            
-            
+
+
     def _empty_seq(self, i):
         k = self._ws(i+1)
         if (self._cfg[i] in ":|") and (self._cfg[k] in "|;"):
@@ -236,7 +236,7 @@ class _Parser:
                 elems.append(Term(name))
                 i = m.end(0)
                 continue
-            
+
 
             if self._cfg[i] in "|;":
                 return i, elems
@@ -249,11 +249,8 @@ class _Parser:
         return i, None
 
 
-
 def parse(lex, cfg):
     return _Parser().parse(lex, cfg)
-
-
 
 if __name__ == "__main__":
     import sys
