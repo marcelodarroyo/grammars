@@ -4,12 +4,15 @@ import sys, Lexer, CFG
 
 print sys.argv[1], sys.argv[2]
 
-def onlyTokens(seq):
+# reachable symbols dictionary (s0:[s1,s2,...,sn])
+rs = {}
+
+def nonrec(seq):
     """
-    Check if sequence has only terminals or token references
+    Check if sequence (rhs) do not use recursive symbols
     """
     for sym in seq:
-        if isinstance(sym,CFG.Non_Term_Ref):
+        if isinstance(sym,CFG.Non_Term_Ref) and rs.has_key(sym.name):
             return False
     return True
 
@@ -47,6 +50,7 @@ def genNonRecGrammar(g,n):
     Return an non recursive grammar with n unrolls
     """
     # step 1: generate rules from 0..n-1 unrools
+    global rs
     rs = reachableSymbols(g)
     print "Reachablity relation:"
     print rs
@@ -62,7 +66,7 @@ def genNonRecGrammar(g,n):
     print nextSymbolIndex
     print "\nGenerating non recursive grammar:"
     rules = []
-    generated = []
+    generated = set()
     while not unrools(nextSymbolIndex,n):
         for r in g.rules:
             if r.name in rs[r.name]:
@@ -83,12 +87,11 @@ def genNonRecGrammar(g,n):
                             newseq.append(sym)
                     newrule.seqs.append(newseq)
             else:
-                # non recursive rule
                 if r.name in generated:
                     continue
                 newrule = CFG.Rule(r.name,[])
                 for seq in r.seqs:
-                    newseq = [];
+                    newseq = []
                     for sym in seq:
                         if isinstance(sym,CFG.Non_Term_Ref) and sym.name in rs.keys():
                             name = sym.name + "0"
@@ -97,21 +100,37 @@ def genNonRecGrammar(g,n):
                             newseq.append(sym)
                     newrule.seqs.append(newseq)
 
-            generated.append(newrule.name)
+            generated.add(newrule.name)
             rules.append(newrule)
 
     # step 2: generate indexed rules with only terminal sequences as rhs
+
+    # step 2.1: Generate only s : rhs width rhs containing only non-rec symbols
     for name in lastGenSymbolIndex.keys():
         if lastGenSymbolIndex[name] == nextSymbolIndex[name]:
+            r = g.get_rule(name)
             newrule = CFG.Rule(name + str(lastGenSymbolIndex[name]),[])
-            for seq in g.get_rule(name).seqs:
-                newseq = [];
-                if onlyTokens(seq):
-                    for sym in seq:
+            nextSymbolIndex[name] = nextSymbolIndex[name] + 1
+            for seq in r.seqs:
+                if nonrec(seq):
+                    newrule.seqs.append(seq)
+                    rules.append(newrule)
+
+    # step 2.2: Generate not yet generated rules
+    for name in lastGenSymbolIndex.keys():
+        if lastGenSymbolIndex[name] == nextSymbolIndex[name]:
+            r = g.get_rule(name)
+            newrule = CFG.Rule(name + str(lastGenSymbolIndex[name]),[])
+            for seq in r.seqs:
+                newseq = []
+                for sym in seq:
+                    if isinstance(sym,CFG.Non_Term_Ref) and sym.name in rs.keys():
+                        name = sym.name + lastGenSymbolIndex[name]
+                        newseq.append(CFG.Non_Term_Ref(name))
+                    else:
                         newseq.append(sym)
-                    newrule.seqs.append(newseq)
-            if newrule.seqs:
                 rules.append(newrule)
+            generated.add(newrule.name)
 
     return CFG.CFG(g.tokens,rules)
 #============= end function genNonRecGrammar ===============
